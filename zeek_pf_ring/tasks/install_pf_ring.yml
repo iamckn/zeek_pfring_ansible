@@ -1,0 +1,179 @@
+################################################################
+# Apt upgrade
+################################################################
+- name: Run the equivalent of "apt-get update" as a separate step
+  apt:
+    update_cache: yes
+    force_apt_get: True  
+
+- name: Upgrade all packages to the latest version
+  apt:
+    name: "*"
+    state: latest
+    force_apt_get: True 
+
+####################################################################
+#  Setup Timedatectl
+####################################################################
+- name: Set time to {{ timezone }}
+  timezone: 
+    name: '{{ timezone }}'
+
+################################################################
+# Install prereqs
+################################################################
+- name: Install prereqs
+  apt:
+    name:
+      - 'cmake'
+      - 'make' 
+      - 'gcc' 
+      - 'g++' 
+      - 'flex' 
+      - 'bison' 
+      - 'libcap-ng0'
+      - 'libpcap-dev'
+      - 'libcap-ng-dev' 
+      - 'libssl-dev' 
+      - 'python-dev' 
+      - 'swig' 
+      - 'zlib1g'
+      - 'zlib1g-dev'
+      - 'libgeoip-dev'
+      - 'build-essential' 
+      - 'libelf-dev'
+      - 'git'
+      - 'libpcre3'
+      - 'libpcre3-dbg'
+      - 'libpcre3-dev'
+      - 'autoconf'
+      - 'automake'
+      - 'libtool'
+      - 'libnet1-dev'
+      - 'libyaml-0-2'
+      - 'libyaml-dev'
+      - 'libmagic-dev'
+      - 'libnuma-dev'
+      - 'pkg-config'
+    state: present
+    update_cache: true
+
+################################################################
+# Compile PF_RING
+################################################################
+- name: Check if pf_ring module is loaded
+  modprobe:
+    name: 'pf_ring'
+    state: present
+  ignore_errors: true
+  register: pf_ring_module_status
+
+- name: Clone pf_ring repo
+  git:
+    repo: '{{ pf_ring_url }}'
+    dest: '{{ pf_ring_dir }}'
+
+- name: Compile pf_ring kernel module
+  make:
+    chdir: '{{ pf_ring_dir }}/kernel'
+  when: pf_ring_module_status is failed
+
+- name: Install pf_ring kernel module
+  make:
+    chdir: '{{ pf_ring_dir }}/kernel'
+    target: install
+  when: pf_ring_module_status is failed
+
+- name: Load pf_ring module
+  modprobe:
+    name: 'pf_ring'
+    state: present
+
+##################################################################################
+# Compile and install Libpfring
+##################################################################################
+- name: Stat Libpfring
+  stat:
+    path: /usr/local/lib/libpfring.so
+  register: libpfring_stat
+
+- name: Configure Libpfring
+  shell: './configure'
+  args:
+    chdir: '{{ pf_ring_dir }}/userland/lib'
+  when: not libpfring_stat.stat.exists
+
+- name: Make Libpfring 
+  make:
+    chdir: '{{ pf_ring_dir }}/userland/lib'
+  when: not libpfring_stat.stat.exists
+  
+- name: Make install Libpfring
+  make:
+    chdir: '{{ pf_ring_dir }}/userland/lib'
+    target: install
+  when: not libpfring_stat.stat.exists
+
+##################################################################################
+# Compile and install Libpcap
+##################################################################################
+- name: Stat Libpcap
+  stat:
+    path: /usr/local/lib/libpcap.so
+  register: libpcap_stat
+
+- name: Configure Libpcap
+  shell: './configure'
+  args:
+    chdir: '{{ pf_ring_dir }}/userland/libpcap'
+  when: not libpcap_stat.stat.exists
+
+- name: Make Libpcap 
+  make:
+    chdir: '{{ pf_ring_dir }}/userland/libpcap'
+  when: not libpcap_stat.stat.exists
+  
+- name: Make install Libpcap
+  make:
+    chdir: '{{ pf_ring_dir }}/userland/libpcap'
+    target: install
+  when: not libpcap_stat.stat.exists
+
+##################################################################################
+# PF_RING service
+##################################################################################
+- name: Stat pf_ringctl
+  stat:
+    path: /usr/bin/pf_ringctl
+  register: pf_ringctl_stat
+
+- name: Copy pf_ringctl
+  copy:
+    src: '/opt/pf_ring/package/usr/bin/pf_ringctl'
+    dest: '/usr/bin/pf_ringctl'
+    mode: '755'
+    remote_src: yes
+  when: not pf_ringctl_stat.stat.exists
+
+- name: Stat pf_ringcfg
+  stat:
+    path: /usr/bin/pf_ringcfg
+  register: pf_ringcfg_stat
+
+- name: Copy pf_ringcfg
+  copy:
+    src: '/opt/pf_ring/package/usr/bin/pf_ringcfg'
+    dest: '/usr/bin/pf_ringcfg'
+    mode: '755'
+    remote_src: yes
+  when: not pf_ringcfg_stat.stat.exists
+
+- name: Load pf_ring at boot
+  lineinfile:
+    path: /etc/modules
+    line: 'pf_ring'
+    state: present
+    create: yes
+  notify:
+    - "reboot the server"
+

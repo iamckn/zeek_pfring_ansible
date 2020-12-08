@@ -1,0 +1,73 @@
+################################################################
+# Apt upgrade
+################################################################
+- name: Run the equivalent of "apt-get update" as a separate step
+  apt:
+    update_cache: yes
+    force_apt_get: True
+
+- name: Upgrade all packages to the latest version
+  apt:
+    name: "*"
+    state: latest
+    force_apt_get: True
+
+################################################################
+# Install prereqs
+################################################################
+- name: Install prereqs
+  apt:
+    name:
+      - git
+      - cmake 
+      - make 
+      - gcc 
+      - g++ 
+      - flex 
+      - bison 
+      - libpcap-dev 
+      - libssl-dev 
+      - python-dev 
+      - swig 
+      - zlib1g-dev
+    state: present
+    update_cache: true
+
+################################################################
+# Compile Zeek
+################################################################
+- name: Check whether zeek is installed
+  stat:
+    path: /usr/local/zeek/bin/zeekctl
+  register: zeek_stat
+
+- name: Clone zeek repo
+  git:
+    repo: '{{ zeek_url }}'
+    dest: '/tmp/zeek'
+    recursive: yes
+  when: not zeek_stat.stat.exists
+
+#GEOIP?
+
+- name: Debug msg
+  debug:
+    msg: 'WARNING - Compiling Zeek from source can take up to 30mins'
+  when: not zeek_stat.stat.exists
+
+- name: Configure zeek
+  shell: ./configure --with-pcap={{ pf_ring_dir }}
+  args:
+    chdir: '/tmp/zeek'
+  when: not zeek_stat.stat.exists
+
+- name: Compile zeek
+  make:
+    chdir: '/tmp/zeek'
+  when: not zeek_stat.stat.exists
+
+- name: Install zeek
+  make:
+    chdir: '/tmp/zeek'
+    target: install
+  when: not zeek_stat.stat.exists

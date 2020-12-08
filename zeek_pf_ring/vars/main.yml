@@ -1,0 +1,7 @@
+---
+# vars file for zeek_pfring
+pf_ring_dir: '/opt/pf_ring'
+pf_ring_version: '7.6.0'
+pf_ring_url: 'https://github.com/ntop/PF_RING.git'
+zeek_url: 'https://github.com/zeek/zeek'
+timezone: 'Africa/Nairobi'

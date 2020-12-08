@@ -1,0 +1,9 @@
+---
+# tasks file for zeek_pfring
+- name: Install pf_ring
+  include: 'install_pf_ring.yml'
+  tags: install_pf_ring
+
+- name: Install zeek
+  include: 'install_zeek.yml'
+  tags: install_zeek
