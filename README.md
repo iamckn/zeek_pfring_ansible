@@ -10,6 +10,12 @@ cd zeek_pfring_ansible
 
 Edit the hosts file in that folder and fill in the IP field with the zeek server IP
 
+# Prerequisites
+
+```bash
+ansible-playbook setup.yml -u root -k -i hosts -t pre_setup
+```
+
 # Install pf_ring
 
 ```bash
