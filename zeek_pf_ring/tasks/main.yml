@@ -1,5 +1,9 @@
 ---
 # tasks file for zeek_pfring
+- name: Prerequisites
+  include: 'pre_setup.yml'
+  tags: pre_setup
+
 - name: Install pf_ring
   include: 'install_pf_ring.yml'
   tags: install_pf_ring

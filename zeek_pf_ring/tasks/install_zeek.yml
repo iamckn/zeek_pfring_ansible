@@ -1,37 +1,18 @@
-################################################################
-# Apt upgrade
-################################################################
-- name: Run the equivalent of "apt-get update" as a separate step
-  apt:
-    update_cache: yes
-    force_apt_get: True
+####################################################################
+# Install/Setup GeoIP
+# https://docs.zeek.org/en/stable/frameworks/geoip.html
+####################################################################
+- name: Stat GeoIP database
+  stat:
+    path: '/usr/share/GeoIP/GeoLite2-City.mmdb'
+  register: geoip_stat
 
-- name: Upgrade all packages to the latest version
-  apt:
-    name: "*"
-    state: latest
-    force_apt_get: True
-
-################################################################
-# Install prereqs
-################################################################
-- name: Install prereqs
-  apt:
-    name:
-      - git
-      - cmake 
-      - make 
-      - gcc 
-      - g++ 
-      - flex 
-      - bison 
-      - libpcap-dev 
-      - libssl-dev 
-      - python-dev 
-      - swig 
-      - zlib1g-dev
-    state: present
-    update_cache: true
+- name: Download and extract GeoIP database
+  unarchive:
+    src: '{{ geoip_url }}'
+    dest: '/usr/share/GeoIP/'
+    remote_src: yes
+  when: not geoip_stat.stat.exists
 
 ################################################################
 # Compile Zeek
@@ -47,8 +28,6 @@
     dest: '/tmp/zeek'
     recursive: yes
   when: not zeek_stat.stat.exists
-
-#GEOIP?
 
 - name: Debug msg
   debug:
@@ -71,3 +50,57 @@
     chdir: '/tmp/zeek'
     target: install
   when: not zeek_stat.stat.exists
+
+####################################################################
+# Configure Zeek
+####################################################################
+- name: Set the interface
+  lineinfile:  
+    path: '/usr/local/zeek/etc/node.cfg'
+    regexp: '^interface='
+    line: 'interface={{ zeek_interface }}'
+
+#Configure OUI logging
+- name: Download OUI logging script
+  get_url:
+    url: https://raw.githubusercontent.com/iamckn/zeek-oui/master/oui-logging.zeek
+    dest: /usr/local/zeek/share/zeek/policy/protocols/conn/oui-logging.zeek
+    owner: root
+    group: root
+
+- name: Download OUI database                    
+  get_url:
+    url: https://raw.githubusercontent.com/iamckn/zeek-oui/master/oui.dat
+    dest: /usr/local/zeek/share/zeek/policy/protocols/conn/oui.dat
+    owner: root
+    group: root
+
+- name: Load additional zeek scripts  
+  lineinfile:                                
+    path: '/usr/local/zeek/share/zeek/site/local.zeek'
+    line: '{{ item }}'
+    state: present
+    create: yes
+  with_items:
+    - '@load policy/protocols/conn/mac-logging'
+    - '@load policy/protocols/conn/oui-logging'
+    - '@load policy/tuning/json-logs.zeek'
+
+####################################################################
+# Zeek deploy
+####################################################################
+- name: Run zeek deploy
+  shell: '/usr/local/zeek/bin/zeekctl {{ item }}'
+  with_items:
+    - 'install'
+    - 'deploy'
+    - 'status'
+
+####################################################################
+# Set zeek to start at boot
+####################################################################
+- name: Start zeek at boot
+  cron:
+    name: "zeek cron"
+    minute: "0-59/5"
+    job: "/usr/local/zeek/bin/zeekctl"
