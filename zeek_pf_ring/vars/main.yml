@@ -7,3 +7,9 @@ zeek_url: 'https://github.com/zeek/zeek'
 zeek_interface: 'ens33'
 geoip_url: 'https://github.com/iamckn/geoip/raw/main/GeoLite2-City.tar.xz'
 timezone: 'Africa/Nairobi'
+
+#Filebeat
+ELASTIC_VERSION: '7.9.0'
+ELASTIC_GPG_URL: 'https://artifacts.elastic.co/GPG-KEY-elasticsearch'
+ELASTIC_REPO_URL: 'deb https://artifacts.elastic.co/packages/7.x/apt stable main'
+FILEBEAT_OUTPUT_HOST: 'localhost'

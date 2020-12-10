@@ -11,3 +11,7 @@
 - name: Install zeek
   include: 'install_zeek.yml'
   tags: install_zeek
+
+- name: Install filebeat
+  include: 'install_filebeat.yml'
+  tags: install_filebeat
