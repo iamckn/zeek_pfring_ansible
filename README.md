@@ -28,6 +28,12 @@ ansible-playbook setup.yml -u root -k -i hosts -t install_pf_ring
 ansible-playbook setup.yml -u root -k -i hosts -t install_zeek
 ```
 
+# Install filebeat
+
+```bash
+ansible-playbook setup.yml -u root -k -i hosts -t install_filebeat
+```
+
 # Install Everything
 
 ```bash
