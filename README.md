@@ -8,7 +8,7 @@ Various options can be set in the zeek_pf_ring/vars/main.yml file. The most impo
 ```
 zeek_interface:
 timezone:
-timezone:
+FILEBEAT_OUTPUT_HOST:
 ```
 
 # On the client
