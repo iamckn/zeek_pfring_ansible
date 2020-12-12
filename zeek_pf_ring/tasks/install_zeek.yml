@@ -75,6 +75,12 @@
     owner: root
     group: root
 
+#Configure JA3/JA3S
+- name: Clone zeek repo
+  git:
+    repo: 'https://github.com/salesforce/ja3'
+    dest: '/usr/local/zeek/share/zeek/site/ja3'
+
 - name: Load additional zeek scripts  
   lineinfile:                                
     path: '/usr/local/zeek/share/zeek/site/local.zeek'
@@ -85,6 +91,7 @@
     - '@load policy/protocols/conn/mac-logging'
     - '@load policy/protocols/conn/oui-logging'
     - '@load policy/tuning/json-logs.zeek'
+    - '@load ./ja3/zeek'
 
 ####################################################################
 # Zeek deploy
