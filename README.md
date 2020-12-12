@@ -1,6 +1,16 @@
 # zeek_pfring_ansible
 Ansible playbook for the installation of pf_ring and zeek
 
+This will install zeek with pf_ring support. In addition filebeat will be installed and ship logs to port 5044 of your log receiver.
+
+Various options can be set in the zeek_pf_ring/vars/main.yml file. The most important ones are:
+
+```
+zeek_interface:
+timezone:
+timezone:
+```
+
 # On the client
 
 ```bash
