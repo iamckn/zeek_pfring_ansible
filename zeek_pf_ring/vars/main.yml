@@ -4,7 +4,7 @@ pf_ring_dir: '/opt/pf_ring'
 pf_ring_version: '7.6.0'
 pf_ring_url: 'https://github.com/ntop/PF_RING.git'
 zeek_url: 'https://github.com/zeek/zeek'
-zeek_interface: 'ens33'
+zeek_interface: 'eth0'
 geoip_url: 'https://github.com/iamckn/geoip/raw/main/GeoLite2-City.tar.xz'
 timezone: 'Africa/Nairobi'
 

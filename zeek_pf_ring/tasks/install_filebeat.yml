@@ -1,0 +1,28 @@
+- name: Add Elastic GPG key
+  apt_key:
+    url: "{{ ELASTIC_GPG_URL }}"
+    state: present
+
+- name: Add Elastic repo
+  apt_repository:
+    repo: "{{ ELASTIC_REPO_URL }}"
+    state: present
+
+################################################################################
+# Install Filebeat
+################################################################################
+- name: Install Filebeat
+  apt:
+    name: 'filebeat'
+
+- name: Copy beats input
+  template:
+    src: "templates/filebeat/filebeat.yml"
+    dest: "/etc/filebeat/filebeat.yml"
+    mode: 0400
+
+- name: Restart Filebeat
+  service:
+    name: 'filebeat'
+    state: 'restarted'
+    enabled: yes
