@@ -76,16 +76,22 @@
     group: root
 
 #Configure JA3/JA3S
-- name: Clone zeek repo
-  git:
-    repo: 'https://github.com/salesforce/ja3'
-    dest: '/usr/local/zeek/share/zeek/site/ja3'
+#- name: Clone zeek repo
+#  git:
+#    repo: 'https://github.com/salesforce/ja3'
+#    dest: '/usr/local/zeek/share/zeek/site/ja3'
 
 #Configure HASSH
+#- name: Clone zeek repo
+#  git:
+#    repo: 'https://github.com/salesforce/hassh'
+#    dest: '/usr/local/zeek/share/zeek/site/hassh'
+
+#Configure Zeek Intel
 - name: Clone zeek repo
   git:
-    repo: 'https://github.com/salesforce/hassh'
-    dest: '/usr/local/zeek/share/zeek/site/hassh'
+    repo: 'https://github.com/CriticalPathSecurity/Zeek-Intelligence-Feeds'
+    dest: '/usr/local/zeek/share/zeek/site/Zeek-Intelligence-Feeds'
 
 - name: Load additional zeek scripts  
   lineinfile:                                
@@ -94,11 +100,18 @@
     state: present
     create: yes
   with_items:
+    - '@load policy/protocols/mqtt'
     - '@load policy/protocols/conn/mac-logging'
     - '@load policy/protocols/conn/oui-logging'
     - '@load policy/tuning/json-logs.zeek'
-    - '@load ./ja3/zeek'
-    - '@load ./hassh/zeek'
+    #- '@load ./ja3/zeek'
+    #- '@load ./hassh/zeek'
+    - '@load base/frameworks/intel'
+    - '@load policy/frameworks/intel/seen'
+    - '@load policy/frameworks/intel/do_notice'
+    - '@load policy/frameworks/files/hash-all-files'
+    - '@load Zeek-Intelligence-Feeds'
+    #- '@load packages'
 
 ####################################################################
 # Zeek deploy
@@ -118,3 +131,18 @@
     name: "zeek cron"
     minute: "0-59/5"
     job: "/usr/local/zeek/bin/zeekctl"
+
+####################################################################
+# Set zeek intel feeds to update every 24hrs
+####################################################################
+- name: Copy intel feeds update script
+  template:
+    src: "templates/zeek/zeek_update.sh"
+    dest: "/opt/zeek_update.sh"
+    mode: 0755
+
+- name: Start zeek at boot
+  cron:
+    name: "zeek intel"
+    hour: "23"
+    job: "sh /opt/zeek_update.sh > /dev/null 2>&1"
